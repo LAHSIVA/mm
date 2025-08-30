@@ -1,0 +1,189 @@
+'''
+import numpy as np
+import matplotlib.pyplot as plt
+
+def get_arrival_times(total_time, avg_gap):
+    gaps = np.random.exponential(scale=avg_gap, size=int(total_time / avg_gap) * 2)
+    arrivals = np.cumsum(gaps)
+    return arrivals[arrivals <= total_time]
+
+def get_service_times(n_customers, min_time, max_time):
+    avg_time = (min_time + max_time) / 2
+    return np.clip(np.random.poisson(lam=avg_time, size=n_customers), min_time, max_time)
+
+# Step 3: Run the actual queue
+def run_queue(arrivals, services):
+    start_times, end_times, waits = [], [], []
+
+    for i in range(len(arrivals)):
+        if i == 0:
+            start = arrivals[i]
+        else:
+            start = max(arrivals[i], end_times[-1])
+
+        end = start + services[i]
+        wait = start - arrivals[i]
+
+        start_times.append(start)
+        end_times.append(end)
+        waits.append(wait)
+
+    return np.array(start_times), np.array(end_times), np.array(waits)
+
+def queue_length_timeline(arrivals, starts, total_time):
+    """At each minute, count how many are still waiting in line."""
+    timeline = np.arange(total_time + 1)
+    queue_sizes = [np.sum((arrivals <= t) & (starts > t)) for t in timeline]
+    return timeline, queue_sizes
+
+def show_results(n_customers, wait_avg, queue_avg, utilization):
+    print("\n--- Booking Station Report ---")
+    print(f"Customers served        : {n_customers}")
+    print(f"Avg waiting time        : {wait_avg:.2f} minutes")
+    print(f"Avg queue length        : {queue_avg:.2f} people")
+    print(f"Counter busy utilization: {utilization:.2f} ({utilization*100:.1f}%)\n")
+
+def plot_queue(timeline, queue_sizes):
+    plt.plot(timeline, queue_sizes, color="blue")
+    plt.title("How the Queue Changes Over Time")
+    plt.xlabel("Time")
+    plt.ylabel("Queue Size")
+    plt.grid(True)
+    plt.show()
+
+# ------------------- Run Simulation -------------------
+if __name__ == "__main__":
+    TOTAL_TIME = 1000      
+    AVG_GAP = 10           
+    MIN_SERVICE, MAX_SERVICE = 8, 12
+
+    arrivals = get_arrival_times(TOTAL_TIME, AVG_GAP)
+    services = get_service_times(len(arrivals), MIN_SERVICE, MAX_SERVICE)
+    starts, ends, waits = run_queue(arrivals, services)
+
+    utilization = np.sum(services) / TOTAL_TIME
+    wait_avg = np.mean(waits)
+    
+    timeline, queue_sizes = queue_length_timeline(arrivals, starts, TOTAL_TIME)
+    queue_avg = np.mean(queue_sizes)
+
+    show_results(len(arrivals), wait_avg, queue_avg, utilization)
+    plot_queue(timeline, queue_sizes)
+'''
+
+'''
+import matplotlib.pyplot as plt
+def simulate_digoxin_decay(dose : float, days : int = 50) :
+    concentration = [0]
+    for _ in range(1, days) :
+        concentration.append(0.5 * concentration[-1] + dose)
+    return concentration
+if __name__ == "__main__" :
+    days = 50
+    doses = [0.1, 0.2, 0.3]
+    colors = ['blue', 'green', 'red']
+
+    plt.style.use("default")
+    for i, dose in enumerate(doses) :
+        conc = simulate_digoxin_decay(dose, days)
+        steady_state = 2 * dose
+        plt.plot(range(days), conc, label = f"Dose = {dose} mg/day", color = colors[i])
+        plt.axhline(steady_state, linestyle = '--', color = colors[i], alpha = 0.6)
+
+    plt.title("Digoxin Concentration Over Time")
+    plt.xlabel("Days")
+    plt.ylabel("Digoxin in Bloodstream (mg)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+'''
+
+'''
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_graphs(sizes : list, distributions : dict) :
+
+    plt.style.use("dark_background")
+    fig, axes = plt.subplots(4, 4, figsize = (20, 20))
+
+    for i in range(len(sizes)) :
+        j = 0
+        for distribution, func in distributions.items() :
+            rands = func(sizes[i])
+            
+            counts, bin_edges = np.histogram(rands, bins = 30, density = True)
+            axes[i, j].hist(rands, bins = bin_edges, density = True, color = "gray", label = "Histogram")
+            axes[i, j].set_title(f"{sizes[i]} random variables using {distribution} distribution")
+            axes[i, j].set_xlabel("Random numbers")
+            axes[i, j].set_ylabel("Frequency")
+
+            # Plotting Frequency Polygon :
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            axes[i, j].plot(bin_centers, counts, marker = 'x', linestyle = '-', color = 'g', label = 'Frequency Polygon')
+            axes[i, j].legend()
+
+            j += 1
+
+    plt.tight_layout()
+    plt.show()
+
+if __name__ == "__main__" :
+    sizes = [500, 1000, 10000, 100000]
+    distributions = {
+        "uniform"     : lambda count : np.random.uniform(size = count),
+        "exponential" : lambda count : np.random.exponential(scale = 1, size = count),
+        "weibull"     : lambda count : np.random.weibull(a = 1, size = count),
+        "triangular"  : lambda count : np.random.triangular(left = 0, mode = 0.5, right = 1, size = count)
+    }
+    plot_graphs(sizes, distributions)
+'''
+'''
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+
+def an1(r, n, a0) :
+    return (r**n) * a0
+    
+def generate_data(r_values, a0_values, n_terms = 100) :
+    data = []
+    for a in a0_values :
+        sequences = []
+        for r in r_values :
+            sequence = [an1(r, n, a) for n in range(n_terms)]
+            sequences.append(sequence)
+        data.append(sequences)
+    return data
+    
+def plot_sequences(data, title) :
+    for sequences_for_a0 in data :
+        for sequence in sequences_for_a0 :
+            plt.plot(np.array(sequence))
+    plt.title(title)
+    plt.show()
+    print()
+    
+if __name__ == "__main__" :
+    a0_values = [random.uniform(0.5, 1) for _ in range(10)]
+
+    r1_values = [0] * 100
+    r2_values = [random.uniform(0, 1) for _ in range(100)]
+    r3_values = [random.uniform(-1, 0) for _ in range(100)]
+    r4_values = [random.choice([1, -1]) * random.uniform(1, 1000) for _ in range(100)]
+
+    labels = ["1. r = 0", "2. 0 < r < 1 ", "3. -1 < r < 0 ", "4. |r| > 1 "]
+
+    data1 = generate_data(r1_values[:100], a0_values)
+    plot_sequences(data1, labels[0])
+
+    data2 = generate_data(r2_values[:100], a0_values)
+    plot_sequences(data2, labels[1])
+
+    data3 = generate_data(r3_values[:100], a0_values)
+    plot_sequences(data3, labels[2])
+
+    data4 = generate_data(r4_values[:100], a0_values)
+    plot_sequences(data4, labels[3])
+'''
