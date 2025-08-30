@@ -1,0 +1,154 @@
+'''
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+from scipy.stats import ttest_rel
+
+# Define the ODE: y' + x^2 y = x => y' = x - x^2 y
+def f(x, y):
+    return x - x**2 * y
+
+# Analytical solution: y = e^{-x^3/3} * (integral from 0 to x of t e^{t^3/3} dt + 1)
+def integrand(t):
+    return t * np.exp(t**3 / 3)
+
+def analytical_solution(x):
+    integral, _ = quad(integrand, 0, x)
+    return np.exp(-x**3 / 3) * (integral + 1)
+
+# Euler's method
+def euler_method(x0, y0, xf, h):
+    n = int((xf - x0) / h) + 1
+    x = np.linspace(x0, xf, n)
+    y = np.zeros(n)
+    y[0] = y0
+    for i in range(n-1):
+        y[i+1] = y[i] + h * f(x[i], y[i])
+    return x, y
+
+# Parameters
+x0, y0 = 0, 1  # Initial condition
+xf = 1         # Final x value
+h = 0.01       # Step size
+
+# Numerical solution
+x_num, y_num = euler_method(x0, y0, xf, h)
+
+# Analytical solution
+y_ana = np.array([analytical_solution(xi) for xi in x_num])
+
+# Compute errors
+errors = np.abs(y_ana - y_num)
+mae = np.mean(errors)
+rmse = np.sqrt(np.mean(errors**2))
+
+# Statistical test: Paired t-test
+t_stat, p_value = ttest_rel(y_num, y_ana)
+
+# # Print error metrics
+# print(f"Mean Absolute Error: {mae:.6f}")
+# print(f"Root Mean Square Error: {rmse:.6f}")
+# # print(f"Paired t-test: t-statistic = {t_stat:.6f}, p-value = {p_value:.6f}")
+
+# Print results table
+print("\nResults Table:")
+print("-" * 50)
+print(f"{'x':>8} {'y_numerical':>12} {'y_analytical':>12} {'error':>12}")
+print("-" * 50)
+# Print every 10th point to keep table manageable
+for i in range(0, len(x_num), 10):
+    print(f"{x_num[i]:>8.3f} {y_num[i]:>12.6f} {y_ana[i]:>12.6f} {errors[i]:>12.6f}")
+print("-" * 50)
+
+# Visualization
+plt.figure(figsize=(10, 6))
+plt.plot(x_num, y_num, 'b-', label='Numerical (Euler)')
+plt.plot(x_num, y_ana, 'r--', label='Analytical')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title("Numerical vs Analytical Solution of y' + x^2 y = x, y(0) = 1")
+plt.legend()
+plt.grid(True)
+plt.show()
+'''
+
+
+
+
+'''    
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import quad
+from scipy.stats import ttest_rel
+
+# Define the ODE: y' + x^2 y = x => y' = x - x^2 y
+def f(x, y):
+    return x - x**2 * y
+
+# Analytical solution: y = e^{-x^3/3} * (integral from 0 to x of t e^{t^3/3} dt + 1)
+def integrand(t):
+    return t * np.exp(t**3 / 3)
+
+def analytical_solution(x):
+    integral, _ = quad(integrand, 0, x)
+    return np.exp(-x**3 / 3) * (integral + 1)
+
+# RK4 method
+def rk4_method(x0, y0, xf, h):
+    n = int((xf - x0) / h) + 1
+    x = np.linspace(x0, xf, n)
+    y = np.zeros(n)
+    y[0] = y0
+    for i in range(n-1):
+        x_n = x[i]
+        y_n = y[i]
+        k1 = f(x_n, y_n)
+        k2 = f(x_n + h/2, y_n + h*k1/2)
+        k3 = f(x_n + h/2, y_n + h*k2/2)
+        k4 = f(x_n + h, y_n + h*k3)
+        y[i+1] = y_n + (h/6) * (k1 + 2*k2 + 2*k3 + k4)
+    return x, y
+
+# Parameters
+x0, y0 = 0, 1  # Initial condition
+xf = 1         # Final x value
+h = 0.01       # Step size
+
+# Numerical solution using RK4
+x_num, y_num = rk4_method(x0, y0, xf, h)
+
+# Analytical solution
+y_ana = np.array([analytical_solution(xi) for xi in x_num])
+
+# Compute errors
+errors = np.abs(y_ana - y_num)
+mae = np.mean(errors)
+rmse = np.sqrt(np.mean(errors**2))
+
+# Statistical test: Paired t-test
+t_stat, p_value = ttest_rel(y_num, y_ana)
+
+
+print(f"t-test: t-statistic = {t_stat:.6f}, p-value = {p_value:.6f}")
+
+# Print results table
+print("\nResults Table:")
+print("-" * 50)
+print(f"{'x':>8} {'y_numerical':>12} {'y_analytical':>12} {'error':>12}")
+print("-" * 50)
+# Print every 10th point to keep table manageable
+for i in range(0, len(x_num), 10):
+    print(f"{x_num[i]:>8.3f} {y_num[i]:>12.6f} {y_ana[i]:>12.6f} {errors[i]:>12.6f}")
+print("-" * 50)
+
+# Visualization
+plt.figure(figsize=(10, 6))
+plt.plot(x_num, y_num, 'b-', label='Numerical (RK4)')
+plt.plot(x_num, y_ana, 'r--', label='Analytical')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title("Numerical (RK4) vs Analytical Solution of y' + x^2 y = x, y(0) = 1")
+plt.legend()
+plt.grid(True)
+plt.show()        
+'''
