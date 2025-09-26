@@ -1,0 +1,115 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+fixed_data = {
+    'Open':  [180, 182, 181, 185, 184, 187, 190, 188, 192, 191],
+    'Close': [181, 181, 183, 184, 186, 189, 189, 190, 193, 190]
+}
+
+data = pd.DataFrame(fixed_data)
+
+data["Rate of Return"] = (data["Close"] - data["Open"]) / data["Open"] * 100
+
+print("--- Using Fixed 10-Point Sample Data ---")
+print(data)
+print("----------------------------------------\n")
+
+def coded_variable(n):
+
+    if n % 2 == 0:
+        return np.arange(-n + 1, n, 2).astype(float)
+    else:
+        return np.arange(-(n // 2), n // 2 + 1).astype(float)
+
+def fit_linear(y, x):
+
+    a = np.mean(y)
+    b = np.sum(x * y) / np.sum(x**2)
+    y_pred = a + b * x
+    return (a, b), y_pred
+
+def fit_quadratic(y, x):
+
+    n = len(y)
+    sum_x2 = np.sum(x**2)
+    sum_x4 = np.sum(x**4)
+    sum_y  = np.sum(y)
+    sum_x2y = np.sum(x**2 * y)
+
+    b = np.sum(x * y) / sum_x2
+    A = np.array([[n, sum_x2], [sum_x2, sum_x4]])
+    B = np.array([sum_y, sum_x2y])
+    a, c = np.linalg.solve(A, B)
+
+    y_pred = a + b * x + c * (x**2)
+    return (a, b, c), y_pred
+
+def fit_cubic(y, x):
+
+    X = np.vstack([np.ones_like(x), x, x**2, x**3]).T
+  
+    coeffs = np.linalg.inv(X.T @ X) @ (X.T @ y)
+    y_pred = X @ coeffs
+    return tuple(coeffs), y_pred
+
+def error_analysis(y, y_pred):
+    """Calculates common error metrics for a model."""
+    resid = y - y_pred
+    rmse = np.sqrt(np.mean(resid**2))
+    mape = np.mean(np.abs(resid / y)) * 100
+    r2 = 1 - np.sum(resid**2) / np.sum((y - np.mean(y))**2)
+    return rmse, mape, r2
+
+variables = {
+    "Opening Stock Price": data["Open"].values,
+    "Closing Stock Price": data["Close"].values,
+    "Rate of Return (%)": data["Rate of Return"].values
+}
+
+trend_types = ["Linear", "Quadratic", "Cubic"]
+results_table = []
+
+
+fig, axes = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
+fig.suptitle("Secular Trend Fits for Sample Stock Data", fontsize=16)
+
+for row, (var_name, y) in enumerate(variables.items()):
+    x = coded_variable(len(y))
+    ax = axes[row]
+    ax.plot(range(len(y)), y, marker="o", linestyle='-', color="black", alpha=0.7, label="Actual Data")
+
+    for trend in trend_types:
+        if trend == "Linear":
+            coeffs, y_pred = fit_linear(y, x)
+        elif trend == "Quadratic":
+            coeffs, y_pred = fit_quadratic(y, x)
+        else: 
+            coeffs, y_pred = fit_cubic(y, x)
+
+        rmse, mape, r2 = error_analysis(y, y_pred)
+        results_table.append({
+            "Variable": var_name,
+            "Trend": trend,
+            "Coefficients": np.round(coeffs, 4),
+            "RMSE": round(rmse, 4),
+            "R-squared": round(r2, 4)
+        })
+
+        ax.plot(range(len(y)), y_pred, lw=2, label=f"{trend} Fit")
+
+    ax.set_title(var_name)
+    ax.set_ylabel(var_name)
+    ax.legend(fontsize=9)
+    ax.grid(True, linestyle='--', alpha=0.5)
+    ax.set_xticks(range(len(y))) 
+
+axes[-1].set_xlabel("Observation Index (Time)")
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.show()
+
+
+results_df = pd.DataFrame(results_table)
+print("\n--- Secular Trend Model Results ---")
+print(results_df.to_string())
