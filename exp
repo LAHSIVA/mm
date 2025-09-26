@@ -1,0 +1,113 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import t
+
+def single_exponential_smoothing(series, alpha, initial_value=None):
+    
+    smoothed_series = np.zeros(len(series))
+    
+    if initial_value is None:
+        smoothed_series[0] = series[0]
+    else:
+        smoothed_series[0] = initial_value
+        
+    for t in range(1, len(series)):
+        smoothed_series[t] = alpha * series[t] + (1 - alpha) * smoothed_series[t-1]
+        
+    return smoothed_series
+
+def double_exponential_smoothing(series, alpha, initial_value=None):
+    
+    s1 = single_exponential_smoothing(series, alpha, initial_value)
+    
+    s2 = single_exponential_smoothing(s1, alpha, initial_value)
+    
+    final_forecast = 2 * s1 - s2
+    
+    return s1, s2, final_forecast
+
+def perform_paired_ttest(original_data, forecasted_data, forecast_label, significance_level=0.05):
+    
+    errors = np.array(original_data) - np.array(forecasted_data)
+    
+    n = len(errors)
+    mean_error = np.mean(errors)
+    std_dev_error = np.std(errors, ddof=1)
+    
+    t_statistic = mean_error / (std_dev_error / np.sqrt(n))
+    
+    p_value = 2 * t.sf(np.abs(t_statistic), df=n-1)
+    
+    print(f"\n--- T-Test Results for: {forecast_label} ---")
+    print(f"Mean Forecast Error: {mean_error:.4f}")
+    print(f"t-statistic: {t_statistic:.4f}")
+    print(f"p-value: {p_value:.4f}")
+  
+    if p_value < significance_level:
+        print(f"Conclusion: Reject H0. The forecast is significantly biased (p < {significance_level}).")
+    else:
+        print(f"Conclusion: Fail to reject H0. The forecast is not significantly biased (p >= {significance_level}).")
+
+def plot_smoothing_results(periods, original, smoothed_results, title):
+  
+    plt.figure(figsize=(12, 7))
+    plt.plot(periods, original, 'o-', color='black', label='Original Data')
+    
+    for label, data in smoothed_results.items():
+        plt.plot(periods, data, 'o--', label=label)
+        
+    plt.title(title, fontsize=16)
+    plt.xlabel("Time Period", fontsize=12)
+    plt.ylabel("Value", fontsize=12)
+    plt.xticks(periods, rotation=45)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    
+    periods = np.arange(1, 25)
+    yt = [
+        315, 195, 310, 316, 325, 335, 318, 355, 420, 410, 485, 420,
+        460, 395, 390, 450, 458, 570, 520, 400, 420, 580, 475, 560
+    ]
+    initial_y0 = yt[0]
+
+    alphas = [0.2, 0.4]
+    
+    results = {}
+    for alpha in alphas:
+       
+        results[f'single_a={alpha}'] = single_exponential_smoothing(yt, alpha, initial_y0)
+        
+        s1, s2, final = double_exponential_smoothing(yt, alpha, initial_y0)
+        results[f'double_final_a={alpha}'] = final
+
+    table_data = {'Period': periods, 'Original': yt}
+    table_data.update({f'Single (α={a})': results[f'single_a={a}'] for a in alphas})
+    table_data.update({f'Double (α={a})': results[f'double_final_a={a}'] for a in alphas})
+    
+    results_df = pd.DataFrame(table_data)
+    print("--- Summary of Exponential Smoothing Results ---")
+    print(results_df.round(2).to_string(index=False))
+
+    plot_smoothing_results(
+        periods, yt, 
+        {f'Single Smoothed (α={a})': results[f'single_a={a}'] for a in alphas},
+        'First-Order (Single) Exponential Smoothing'
+    )
+    
+    plot_smoothing_results(
+        periods, yt,
+        {f'Double Smoothed (α={a})': results[f'double_final_a={a}'] for a in alphas},
+        'Second-Order (Double) Exponential Smoothing'
+    )
+    
+    for alpha in alphas:
+        perform_paired_ttest(yt, results[f'single_a={alpha}'], f'Single Smoothing (α={alpha})')
+        perform_paired_ttest(yt, results[f'double_final_a={alpha}'], f'Double Smoothing (α={alpha})')
+
+if __name__ == "__main__":
+    main()
